@@ -50,17 +50,17 @@ func setupGCPRoutes(router *gin.Engine, db *gorm.DB, workspaceGroup *gin.RouterG
 
 	gcpEndpoints := func(r *gin.RouterGroup) {
 		r.GET("/projects", gcp.ListGCPProjects)
-		r.GET("/projects/:project_id/:resource_type", gcp.ListGCPResources)
-		r.GET("/projects/:project_id/:resource_type/:resource_id", gcp.GetGCPResource)
-		r.POST("/projects/:project_id/:resource_type", gcp.CreateGCPResource)
-		r.PUT("/projects/:project_id/:resource_type/:resource_id", gcp.UpdateGCPResource)
-		r.DELETE("/projects/:project_id/:resource_type/:resource_id", gcp.DeleteGCPResource)
+		r.GET("/projects/:project_id/:resource_group/:resource_type", gcp.ListGCPResources)
+		r.GET("/projects/:project_id/:resource_group/:resource_type/:resource_id", gcp.GetGCPResource)
+		r.POST("/projects/:project_id/:resource_group/:resource_type", gcp.CreateGCPResource)
+		r.PUT("/projects/:project_id/:resource_group/:resource_type/:resource_id", gcp.UpdateGCPResource)
+		r.DELETE("/projects/:project_id/:resource_group/:resource_type/:resource_id", gcp.DeleteGCPResource)
 	}
 
 	gcpEndpoints(gcpGroup)
 	workspaceGCP := workspaceGroup.Group("/gcp")
 	gcpEndpoints(workspaceGCP)
-	workspaceGCP.GET("/:resource_type", gcp.ListWorkspaceGCPResourcesAllAccounts)
+	workspaceGCP.GET("/:resource_group/:resource_type", gcp.ListWorkspaceGCPResourcesAllAccounts)
 }
 
 func setupAWSRoutes(router *gin.Engine, db *gorm.DB, workspaceGroup *gin.RouterGroup) {
@@ -70,15 +70,15 @@ func setupAWSRoutes(router *gin.Engine, db *gorm.DB, workspaceGroup *gin.RouterG
 
 	awsEndpoints := func(r *gin.RouterGroup) {
 		r.GET("/accounts", aws.ListAWSAccounts)
-		r.GET("/accounts/:account_id/:resource_type", aws.ListAWSResources)
-		r.GET("/accounts/:account_id/:resource_type/:resource_id", aws.GetAWSResource)
-		r.POST("/accounts/:account_id/:resource_type", aws.CreateAWSResource)
-		r.PUT("/accounts/:account_id/:resource_type/:resource_id", aws.UpdateAWSResource)
-		r.DELETE("/accounts/:account_id/:resource_type/:resource_id", aws.DeleteAWSResource)
+		r.GET("/accounts/:account_id/:resource_group/:resource_type", aws.ListAWSResources)
+		r.GET("/accounts/:account_id/:resource_group/:resource_type/:resource_id", aws.GetAWSResource)
+		r.POST("/accounts/:account_id/:resource_group/:resource_type", aws.CreateAWSResource)
+		r.PUT("/accounts/:account_id/:resource_group/:resource_type/:resource_id", aws.UpdateAWSResource)
+		r.DELETE("/accounts/:account_id/:resource_group/:resource_type/:resource_id", aws.DeleteAWSResource)
 	}
 
 	awsEndpoints(awsGroup)
 	workspaceAWS := workspaceGroup.Group("/aws")
 	awsEndpoints(workspaceAWS)
-	workspaceAWS.GET("/:resource_type", aws.ListWorkspaceAWSResourcesAllAccounts)
+	workspaceAWS.GET("/:resource_group/:resource_type", aws.ListWorkspaceAWSResourcesAllAccounts)
 }
