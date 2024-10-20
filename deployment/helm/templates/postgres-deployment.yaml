@@ -1,0 +1,42 @@
+{{- if and .Values.database.internal.enabled (not .Values.database.external.enabled) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cassata.fullname" . }}-postgres
+  labels:
+    {{- include "cassata.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "cassata.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: database
+  template:
+    metadata:
+      labels:
+        {{- include "cassata.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: database
+    spec:
+      containers:
+      - name: postgres
+        image: "{{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}"
+        env:
+        - name: POSTGRES_DB
+          value: cassata
+        - name: POSTGRES_PASSWORD
+          value: postgres
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: postgres-storage
+        {{- if .Values.postgres.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ include "cassata.fullname" . }}-postgres-pvc
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+{{- end }}

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: cassata
+description: A Helm chart for Cassata - API interface for Crossplane
+type: application
+version: 0.1.3
+appVersion: "0.1.3"

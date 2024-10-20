@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cassata.fullname" . }}
+  labels:
+    {{- include "cassata.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "cassata.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "cassata.selectorLabels" . | nindent 8 }}
+    spec:
+    serviceAccountName: cassata-service-account
+      initContainers:
+      - name: init-cassata
+        image: {{ .Values.initContainer.image }}
+        env:
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: JWT_SECRET_NAME
+          value: {{ .Values.jwtSecret.name }}
+        - name: DB_DSN
+          value: {{ .Values.database.dsn }}
+        - name: SERVICE_ACCOUNT_NAME
+          value: {{ .Values.serviceAccount.name }}
+        - name: CLUSTER_ROLE_NAME
+          value: {{ .Values.clusterRole.name }}
+        - name: CLUSTER_ROLE_BINDING_NAME
+          value: {{ .Values.clusterRoleBinding.name }}
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.jwtSecret.name }}
+              key: JWT_SECRET_KEY
+        - name: DATABASE_DSN
+          value: {{- if .Values.database.external.enabled }}{{ .Values.database.external.dsn | quote }}{{- else }}"postgres://postgres:postgres@{{ include "cassata.fullname" . }}-postgres:5432/cassata"{{- end }}
+        ports:
+        - name: http
+          containerPort: 80
+          protocol: TCP

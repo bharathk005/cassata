@@ -1,0 +1,39 @@
+replicaCount: 1
+
+image:
+  repository: cassata/cassata
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+
+initContainer:
+  image: cassata/cassata-init:latest
+
+service:
+  type: ClusterIP
+  port: 80
+
+database:
+  external: true
+  dsn: "" # Data Source Name for the external database. Required when external is true.
+
+postgres:
+  image:
+    repository: postgres
+    tag: 13
+  persistence:
+    enabled: true
+    size: 1Gi
+
+jwtSecret:
+  name: cassata-jwt-secret
+
+serviceAccount:
+  name: cassata-service-account
+
+clusterRole:
+  name: cassata-cluster-role
+
+clusterRoleBinding:
+  name: cassata-cluster-role-binding
+
