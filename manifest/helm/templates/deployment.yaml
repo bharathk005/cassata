@@ -31,7 +31,7 @@ spec:
           value: {{ .Values.cassata.clusterRoleBinding.name }}
       containers:
       - name: {{ .Chart.Name }}
-        image: "{{ .Values.cassata.image.name }}:{{ .Values.cassata.image.tag | default .Chart.AppVersion }}"
+        image: "{{ .Values.cassata.image.name }}"
         imagePullPolicy: {{ .Values.cassata.image.pullPolicy }}
         env:
         - name: JWT_SECRET_KEY
