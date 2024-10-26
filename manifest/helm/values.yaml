@@ -1,11 +1,10 @@
 cassata:
   image:
-    name: cassata/cassata
+    name: bharathk005/cassata:latest
     pullPolicy: IfNotPresent
-    tag: "latest"
   replicaCount: 1
   initContainer:
-    image: cassata/cassata-init:latest
+    image: bharathk005/cassata-init:latest
 
   service:
     type: ClusterIP
