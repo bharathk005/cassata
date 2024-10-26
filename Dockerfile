@@ -1,5 +1,5 @@
 # Start of Selection
-FROM golang:1.20-alpine as builder
+FROM golang:1.23-alpine as builder
 
 WORKDIR /app
 
