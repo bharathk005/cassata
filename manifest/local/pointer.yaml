@@ -1,0 +1,10 @@
+apiVersion: pointer.iam.gcp.crossplane.io/v1alpha1
+kind: ServiceAccount
+metadata:
+  name: perfect-test-sa
+  namespace: ws1
+spec:
+    refs:
+      - name: perfect-test-sa
+        apiVersion: iam.gcp.crossplane.io/v1alpha1
+        kind: ServiceAccount

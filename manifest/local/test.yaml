@@ -1,0 +1,230 @@
+
+### individual resources
+
+
+#cassata api
+/ws/ws1/gcp/proj/proj1/serviceAccount
+
+#user input
+{
+  "metadata": {
+    "name": "perfect-test-sa",
+  },
+  "spec": {
+    "displayName": "a beautiful service account",
+    "description": "perfection"
+  }
+}
+#map value
+gcp.ServiceAccount -> iam.gcp.crossplane.io/v1alpha1
+
+#managed resource yaml
+apiVersion: iam.gcp.crossplane.io/v1alpha1
+kind: ServiceAccount
+metadata:
+  name: perfect-test-sa
+spec:
+  forProvider:
+    displayName: "a beautiful service account"
+    description: "perfection"
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: gcp-provider
+
+#pointer yaml
+apiVersion: pointer.iam.gcp.crossplane.io/v1alpha1
+Kind: ServiceAccount
+metadata:
+  name: perfect-test-sa
+  namespace: ws1
+spec:
+    refs:
+      - name: perfect-test-sa
+         apiVersion: iam.gcp.crossplane.io/v1alpha1
+         kind: ServiceAccount
+
+---
+#user input
+{
+  "metadata": {
+    "name": "crossplane-test-sa-policy"
+  },
+  "spec": {
+    "serviceAccountRef": {
+      "name": "perfect-test-sa"
+    },
+    "policy": {
+      "bindings": [
+        {
+        "role": "roles/iam.workloadIdentityUser",
+        "members": [
+          "serviceAccount:PROJECT_ID.svc.id.goog[K8S_NAMESPACE/KSA_NAME]"
+          ]
+        }
+      ]
+    }
+  }
+}
+#map value
+gcp.ServiceAccountPolicy -> iam.gcp.crossplane.io/v1alpha1
+
+#managed resource yaml
+apiVersion: iam.gcp.crossplane.io/v1alpha1
+kind: ServiceAccountPolicy
+metadata:
+  name: crossplane-test-sa-policy
+spec:
+  forProvider:
+    serviceAccountRef:
+      name: perfect-test-sa
+    policy:
+      bindings:
+        # Ref: https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity
+        - role: roles/iam.workloadIdentityUser
+          members:
+            - serviceAccount:PROJECT_ID.svc.id.goog[K8S_NAMESPACE/KSA_NAME]
+  providerConfigRef:
+    name: gcp-provider
+
+#pointer yaml
+apiVersion: pointer.iam.gcp.crossplane.io/v1alpha1
+Kind: ServiceAccountPolicy
+metadata:
+  name: crossplane-test-sa-policy
+  namespace: ws1
+spec:
+    refs:
+      - name: crossplane-test-sa-policy
+         apiVersion: iam.gcp.crossplane.io/v1alpha1
+         kind: ServiceAccountPolicy
+
+### custom Type/resources
+
+##create customType API
+
+#endpoint: /ws/ws1/gcp/custom POST
+#user input
+{
+  "typeName":customType1
+   "resources": {
+    "Svc": {
+      "order": 1
+      "nativeType" : "gcp.ServiceAccount"
+      "metadata": {
+        "annotations": "val"
+      }
+      "spec": {
+          "description" = "DO NOT USE"
+      }
+    },
+    "SvcP" {
+      "order": 2
+      "nativeType" : gcp.ServiceAccountPolicy
+      "spec": {
+          "serviceAccountRef": {
+            "name": "$Svc.metadata.name"
+          },
+          "policy": {
+            "bindings": [
+              {
+              "role": "roles/iam.workloadIdentityUser",
+              "members": [
+                "serviceAccount:PROJECT_ID.svc.id.goog[K8S_NAMESPACE/KSA_NAME]"
+                ]
+              }
+            ]
+          }
+      }
+    }
+   }
+}
+
+1. check if user access to each resource type
+2. check if for each resource type, the defaults structure matches forProvider structure
+4. create a K8 CRD with data from each resource type stacked
+3. update the map - gcp.customType1 -> custom.cassata.io/v1
+
+##using customType
+
+#cassata api
+/ws/ws1/gcp/proj/proj1/customType1
+
+#user input
+{
+  "metadata": {
+    "name": "perfect-test-customType1",
+  },
+  "resources": {
+    "Svc":{
+        "metadata": {
+          "name": "perfect-test-sa",
+        },
+        "spec": {
+          "displayName": "a beautiful service account",
+        }
+      }
+      "Svp": {
+         "metadata": {
+          "name": "perfect-test-spolicy",
+        },
+      }
+  }
+}
+#map value
+gcp.customType1 -> custom.cassata.io/v1
+
+#steps:
+1. get the crd of customType1
+2. Create the yaml files for each resource in the CRD (not input because spec for some resources can be entirely default). If any values are missing in input and default raise error
+3. apply each resource based on the order. 
+4. if any resource fails delete the resource based on the reverse order.
+5. Create a pointer that points to all the M resources
+
+
+#managed resource yaml
+apiVersion: iam.gcp.crossplane.io/v1alpha1
+kind: ServiceAccount
+metadata:
+  name: perfect-test-sa
+spec:
+  forProvider:
+    displayName: "a beautiful service account"
+    description: "DO NOT USE"
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: gcp-provider
+
+apiVersion: iam.gcp.crossplane.io/v1alpha1
+kind: ServiceAccountPolicy
+metadata:
+  name: perfect-test-spolicy
+spec:
+  forProvider:
+    serviceAccountRef:
+      name: perfect-test-sa
+    policy:
+      bindings:
+        # Ref: https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity
+        - role: roles/iam.workloadIdentityUser
+          members:
+            - serviceAccount:PROJECT_ID.svc.id.goog[K8S_NAMESPACE/KSA_NAME]
+  providerConfigRef:
+    name: gcp-provider
+
+#pointer yaml
+apiVersion: pointer.custom.cassata.io/v1
+Kind: customType1
+metadata:
+  name: perfect-test-customType1
+  namespace: ws1
+spec:
+    refs:
+      - name: perfect-test-sa
+         apiVersion: iam.gcp.crossplane.io/v1alpha1
+         kind: ServiceAccount
+      - name: perfect-test-spolicy
+         apiVersion: iam.gcp.crossplane.io/v1alpha1
+         kind: ServiceAccountPolicy
+
+
+

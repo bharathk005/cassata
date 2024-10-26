@@ -1,0 +1,11 @@
+apiVersion: iam.gcp.crossplane.io/v1alpha1
+kind: ServiceAccount
+metadata:
+  name: perfect-test-sa
+spec:
+  forProvider:
+    displayName: "a beautiful service account"
+    description: "perfection"
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: gcp-provider

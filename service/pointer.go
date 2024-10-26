@@ -42,8 +42,6 @@ func CreatePointer(gvr schema.GroupVersionResource, provider string, resourceTyp
 		},
 	}
 
-	fmt.Println("pointerObj", pointerObj)
-
 	// Get dynamic client
 	dynamicClient, err := utils.GetDynamicClient()
 	if err != nil {

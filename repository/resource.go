@@ -6,15 +6,15 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func GetResourceMap(provider string, resourceType string) (models.ResourceMap, error) {
+func GetResourceMap(provider string, resourceGroup string, resourceType string) (models.ResourceMap, error) {
 	db := GetDB()
 	var resourceMap models.ResourceMap
-	err := db.Where("provider = ? AND resource_type = ?", provider, resourceType).First(&resourceMap).Error
+	err := db.Where("provider = ? AND resource_group = ? AND resource_type = ?", provider, resourceGroup, resourceType).First(&resourceMap).Error
 	return resourceMap, err
 }
 
-func GetGvrForProviderResourceType(provider string, resourceType string) (schema.GroupVersionResource, error) {
-	resourceMap, err := GetResourceMap(provider, resourceType)
+func GetGvrForProviderResourceType(provider string, resourceGroup string, resourceType string) (schema.GroupVersionResource, error) {
+	resourceMap, err := GetResourceMap(provider, resourceGroup, resourceType)
 	if err != nil {
 		return schema.GroupVersionResource{}, err
 	}

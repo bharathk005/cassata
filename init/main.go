@@ -85,19 +85,71 @@ func createDatabaseTables() {
 	defer db.Close()
 
 	_, err = db.Exec(`
+		-- Migration script to create tables and add unique constraints
 		CREATE TABLE IF NOT EXISTS users (
 			id SERIAL PRIMARY KEY,
-			username VARCHAR(50) UNIQUE NOT NULL,
-			email VARCHAR(100) UNIQUE NOT NULL,
-			password_hash VARCHAR(100) NOT NULL,
-			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-		)
+			name VARCHAR(255) NOT NULL,
+			password_hash VARCHAR(255) NOT NULL,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			deleted_at TIMESTAMP WITH TIME ZONE
+		);
+
+		CREATE TABLE IF NOT EXISTS workspaces (
+			id SERIAL PRIMARY KEY,
+			name VARCHAR(255) NOT NULL,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			deleted_at TIMESTAMP WITH TIME ZONE
+		);
+
+		CREATE TABLE IF NOT EXISTS permissions (
+			id SERIAL PRIMARY KEY,
+			resource VARCHAR(255) NOT NULL,
+			action VARCHAR(50) NOT NULL,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			deleted_at TIMESTAMP WITH TIME ZONE
+		);
+
+		CREATE TABLE IF NOT EXISTS user_workspace (
+			user_id INTEGER REFERENCES users(id),
+			workspace_id INTEGER REFERENCES workspaces(id),
+			PRIMARY KEY (user_id, workspace_id)
+		);
+
+		CREATE TABLE IF NOT EXISTS workspace_permissions (
+			workspace_id INTEGER REFERENCES workspaces(id),
+			permission_id INTEGER REFERENCES permissions(id),
+			PRIMARY KEY (workspace_id, permission_id)
+		);
+
+		CREATE TABLE IF NOT EXISTS resource_maps (
+			id SERIAL PRIMARY KEY,
+			provider VARCHAR(255) NOT NULL,
+			resource_group VARCHAR(255) NOT NULL,
+			resource_type VARCHAR(255) NOT NULL,
+			k8s_api_group VARCHAR(255) NOT NULL,
+			k8s_api_version VARCHAR(255) NOT NULL,
+			k8s_resource VARCHAR(255) NOT NULL,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			deleted_at TIMESTAMP WITH TIME ZONE
+		);
+
+		-- Add unique constraints to prevent duplicate entries
+		ALTER TABLE users ADD CONSTRAINT unique_user_name UNIQUE (name);
+		ALTER TABLE workspaces ADD CONSTRAINT unique_workspace_name UNIQUE (name);
+		ALTER TABLE permissions ADD CONSTRAINT unique_permission UNIQUE (resource, action);
+		ALTER TABLE user_workspace ADD CONSTRAINT unique_user_workspace UNIQUE (user_id, workspace_id);
+		ALTER TABLE workspace_permissions ADD CONSTRAINT unique_workspace_permission UNIQUE (workspace_id, permission_id);
+		ALTER TABLE resource_maps ADD CONSTRAINT unique_resource_map UNIQUE (provider, resource_group, resource_type);
 	`)
-	// TODO: Add more tables here
 	if err != nil {
-		log.Fatalf("Error creating database tables: %s", err)
+		log.Fatalf("Error running database migration script: %s", err)
 	}
-	log.Println("Database tables created or already exist")
+
+	log.Println("Database migration script executed successfully")
 }
 
 func createKubernetesResources(clientset *kubernetes.Clientset) {
@@ -125,14 +177,9 @@ func createKubernetesResources(clientset *kubernetes.Clientset) {
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
-				APIGroups: []string{""},
-				Resources: []string{"pods", "services", "secrets", "configmaps"},
-				Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
-			},
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"deployments"},
-				Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
+				APIGroups: []string{"rbac.authorization.k8s.io"},
+				Resources: []string{"clusterroles"},
+				Verbs:     []string{"update", "get", "list"},
 			},
 		},
 	}

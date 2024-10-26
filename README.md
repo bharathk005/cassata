@@ -19,7 +19,7 @@ Cassata has powerful APIs for managing cloud resources across all Crossplane Pro
   - Declarative APIs for creating and managing your resources. 
   - Share resources with other teams.
 
-## Getting Started
+## Getting Started 
 
 ### Prerequisites
 

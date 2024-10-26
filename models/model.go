@@ -29,6 +29,7 @@ type Permission struct {
 type ResourceMap struct {
 	gorm.Model
 	Provider      string
+	ResourceGroup string
 	ResourceType  string
 	K8sApiGroup   string
 	K8sApiVersion string

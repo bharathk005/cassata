@@ -1,9 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "cassata.fullname" . }}
-  labels:
-    {{- include "cassata.labels" . | nindent 4 }}
+  name: cassata
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -14,32 +12,32 @@ spec:
       labels:
         {{- include "cassata.selectorLabels" . | nindent 8 }}
     spec:
-    serviceAccountName: cassata-service-account
+      serviceAccountName: {{ .Values.cassata.serviceAccount.name }}
       initContainers:
       - name: init-cassata
-        image: {{ .Values.initContainer.image }}
+        image: {{ .Values.cassata.initContainer.image }}
         env:
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
         - name: JWT_SECRET_NAME
-          value: {{ .Values.jwtSecret.name }}
+          value: {{ .Values.cassata.jwtSecret.name }}
         - name: DB_DSN
           value: {{ .Values.database.dsn }}
         - name: SERVICE_ACCOUNT_NAME
-          value: {{ .Values.serviceAccount.name }}
+          value: {{ .Values.cassata.serviceAccount.name }}
         - name: CLUSTER_ROLE_NAME
-          value: {{ .Values.clusterRole.name }}
+          value: {{ .Values.cassata.clusterRole.name }}
         - name: CLUSTER_ROLE_BINDING_NAME
-          value: {{ .Values.clusterRoleBinding.name }}
+          value: {{ .Values.cassata.clusterRoleBinding.name }}
       containers:
       - name: {{ .Chart.Name }}
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        image: "{{ .Values.cassata.image.name }}:{{ .Values.cassata.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.cassata.image.pullPolicy }}
         env:
         - name: JWT_SECRET_KEY
           valueFrom:
             secretKeyRef:
-              name: {{ .Values.jwtSecret.name }}
+              name: {{ .Values.cassata.jwtSecret.name }}
               key: JWT_SECRET_KEY
         - name: DATABASE_DSN
           value: {{- if .Values.database.external.enabled }}{{ .Values.database.external.dsn | quote }}{{- else }}"postgres://postgres:postgres@{{ include "cassata.fullname" . }}-postgres:5432/cassata"{{- end }}

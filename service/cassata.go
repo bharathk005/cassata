@@ -11,9 +11,9 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-func CreateResource(provider string, resourceType string, namespace string, obj map[string]interface{}) (interface{}, error) {
+func CreateResource(provider string, resourceGroup string, resourceType string, namespace string, obj map[string]interface{}) (interface{}, error) {
 	// 1. Get GVR for provider and resource type
-	gvr, err := repository.GetGvrForProviderResourceType(provider, resourceType)
+	gvr, err := repository.GetGvrForProviderResourceType(provider, resourceGroup, resourceType)
 	if err != nil {
 		return nil, err
 	}
@@ -71,9 +71,9 @@ func CreateResource(provider string, resourceType string, namespace string, obj 
 	return created, nil
 }
 
-func GetResource(provider string, resourceType string, namespace string, resourceID string) (interface{}, error) {
+func GetResource(provider string, resourceGroup string, resourceType string, namespace string, resourceID string) (interface{}, error) {
 	// 1. Get GVR for provider and resource type
-	gvr, err := repository.GetGvrForProviderResourceType(provider, resourceType)
+	gvr, err := repository.GetGvrForProviderResourceType(provider, resourceGroup, resourceType)
 	if err != nil {
 		return nil, err
 	}

@@ -1,0 +1,20 @@
+name: Cassata-CI
+
+on:
+    push:
+      branches: [ "main" ]
+  
+jobs:
+  build:
+  
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the Docker image
+        run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+      - name: Push the Docker image
+        run: |
+          docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password ${{ secrets.DOCKERHUB_TOKEN }}
+          docker push my-image-name:$(date +%s)
+

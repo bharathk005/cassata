@@ -52,8 +52,9 @@ func GetGCPResource(c *gin.Context) {
 	resourceType := c.Param("resource_type")
 	resourceID := c.Param("resource_id")
 	workspaceName := c.Param("workspace_name")
+	resourceGroup := c.Param("resource_group")
 
-	resource, err := service.GetResource("gcp", resourceType, workspaceName, resourceID)
+	resource, err := service.GetResource("gcp", resourceGroup, resourceType, workspaceName, resourceID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -68,6 +69,7 @@ func CreateGCPResource(c *gin.Context) {
 	//projectID := c.Param("project_id") will be used to get the provider
 	resourceType := c.Param("resource_type")
 	workspaceName := c.Param("workspace_name")
+	resourceGroup := c.Param("resource_group")
 
 	var requestBody map[string]interface{}
 	if err := c.BindJSON(&requestBody); err != nil {
@@ -75,7 +77,7 @@ func CreateGCPResource(c *gin.Context) {
 		return
 	}
 
-	resource, err := service.CreateResource("gcp", resourceType, workspaceName, requestBody)
+	resource, err := service.CreateResource("gcp", resourceGroup, resourceType, workspaceName, requestBody)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
