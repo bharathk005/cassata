@@ -15,7 +15,7 @@ jobs:
         run: docker build . --file Dockerfile --tag bharathk005/cassata:latest
       - name: Push the Docker image
         env:
-            DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+            DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
             DOCKER_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
           echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
