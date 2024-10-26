@@ -15,7 +15,8 @@ spec:
       serviceAccountName: {{ .Values.cassata.serviceAccount.name }}
       initContainers:
       - name: init-cassata
-        image: {{ .Values.cassata.initContainer.image }}
+        image: "{{ .Values.cassata.image.name }}"
+        command: ["/cassata-init"]
         env:
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
