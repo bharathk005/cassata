@@ -33,14 +33,13 @@ Cassata has powerful APIs for managing cloud resources across all Crossplane Pro
 
 To install Cassata using Helm, run the following command: 
 ```bash
-helm repo add cassata https://cassata-io.github.io/cassata
+helm repo add cassata https://bharathk005.github.io/cassata
 helm install cassata cassata/cassata
 ```
-
-***Check the [values.yaml](deployment/helm/values.yaml) file for more configuration options.***
 
 Alternatively, you can use the `--set` flag to override the default values:
 ```bash
 helm install cassata cassata/cassata --set database.external=true --set database.dsn="your_database_dsn"
 ```
 
+***Check the [values.yaml](manifest/helm/values.yaml) file for more configuration options.***

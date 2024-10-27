@@ -1,48 +1,50 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: cassata
+  name: {{ include "cassata.fullname" . }}
+  namespace: {{ .Values.cassata.namespace }}
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: {{ .Values.cassata.replicaCount }}
   selector:
     matchLabels:
-      {{- include "cassata.selectorLabels" . | nindent 6 }}
+{{- include "cassata.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "cassata.selectorLabels" . | nindent 8 }}
+{{- include "cassata.selectorLabels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ .Values.cassata.serviceAccount.name }}
       initContainers:
-      - name: init-cassata
-        image: "{{ .Values.cassata.image.name }}"
-        command: ["/cassata-init"]
-        env:
-        - name: NAMESPACE
-          value: {{ .Release.Namespace }}
-        - name: JWT_SECRET_NAME
-          value: {{ .Values.cassata.jwtSecret.name }}
-        - name: DB_DSN
-          value: {{ .Values.database.dsn }}
-        - name: SERVICE_ACCOUNT_NAME
-          value: {{ .Values.cassata.serviceAccount.name }}
-        - name: CLUSTER_ROLE_NAME
-          value: {{ .Values.cassata.clusterRole.name }}
-        - name: CLUSTER_ROLE_BINDING_NAME
-          value: {{ .Values.cassata.clusterRoleBinding.name }}
+        - name: init-cassata
+          image: {{ .Values.cassata.image.name }}
+          command: ["/cassata-init"]
+          env:
+            - name: NAMESPACE
+              value: "{{ .Values.cassata.namespace }}"
+            - name: JWT_SECRET_NAME
+              value: "{{ .Values.cassata.jwtSecret.name }}"
+            - name: DATABASE_SECRET_NAME
+              value: "{{ .Values.database.secret.name }}"
+            - name: DATABASE_EXTERNAL
+              value: "{{ .Values.database.external }}"
+            - name: DATABASE_DSN
+              value: "{{ .Values.database.dsn }}"
       containers:
-      - name: {{ .Chart.Name }}
-        image: "{{ .Values.cassata.image.name }}"
-        imagePullPolicy: {{ .Values.cassata.image.pullPolicy }}
-        env:
-        - name: JWT_SECRET_KEY
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Values.cassata.jwtSecret.name }}
-              key: JWT_SECRET_KEY
-        - name: DATABASE_DSN
-          value: {{- if .Values.database.external.enabled }}{{ .Values.database.external.dsn | quote }}{{- else }}"postgres://postgres:postgres@{{ include "cassata.fullname" . }}-postgres:5432/cassata"{{- end }}
-        ports:
-        - name: http
-          containerPort: 80
-          protocol: TCP
+        - name: {{ .Chart.Name }}
+          image: {{ .Values.cassata.image.name }}
+          imagePullPolicy: {{ .Values.cassata.image.pullPolicy }}
+          env:
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.cassata.jwtSecret.name }}
+                  key: JWT_SECRET_KEY
+            - name: DATABASE_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.secret.name }}
+                  key: DATABASE_DSN
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP

@@ -1,10 +1,9 @@
 cassata:
+  namespace: cassata
   image:
     name: bharathk005/cassata:latest
     pullPolicy: IfNotPresent
   replicaCount: 1
-  initContainer:
-    image: bharathk005/cassata-init:latest
 
   service:
     type: ClusterIP
@@ -23,8 +22,10 @@ cassata:
     name: cassata-cluster-role-binding
 
 database:
-  external: true
+  external: true # Use external database. If false, a PostgreSQL database will be deployed in the cluster.
   dsn: "" # Data Source Name for the external database. Required when external is true.
+  secret:
+    name: cassata-database-secret
 
 postgres:
   image:

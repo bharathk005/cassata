@@ -29,61 +29,66 @@ func main() {
 	}
 
 	// 1. Create JWT secret if it doesn't exist
-	createJWTSecret(clientset)
+	createSecret(clientset, os.Getenv("JWT_SECRET_NAME"), os.Getenv("NAMESPACE"), map[string]string{"JWT_SECRET_KEY": generateRandomString(32)})
 
 	// 2. Create database tables if they don't exist
 	createDatabaseTables()
 
-	// 3. Create cluster roles, role bindings, and service account
-	createKubernetesResources(clientset)
-
 	log.Println("Initialization completed successfully")
 }
 
-func createJWTSecret(clientset *kubernetes.Clientset) {
-	secretName := os.Getenv("JWT_SECRET_NAME")
-	namespace := os.Getenv("NAMESPACE")
 
+func createSecret(clientset *kubernetes.Clientset, secretName string, namespace string, data map[string]string) {
 	_, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
 	if err == nil {
-		log.Printf("JWT secret %s already exists", secretName)
+		log.Printf("Secret %s already exists", secretName)
 		return
 	}
 	if !errors.IsNotFound(err) {
-		log.Fatalf("Error checking JWT secret: %s", err)
+		log.Fatalf("Error checking secret: %s", err)
 	}
-
-	jwtSecret := os.Getenv("JWT_SECRET_VALUE")
-	if jwtSecret == "" {
-		jwtSecret = generateRandomString(32)
-	}
-
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: secretName,
 		},
-		StringData: map[string]string{
-			"JWT_SECRET": jwtSecret,
-		},
+		StringData: data,
 		Type: v1.SecretTypeOpaque,
 	}
-
 	_, err = clientset.CoreV1().Secrets(namespace).Create(context.TODO(), secret, metav1.CreateOptions{})
 	if err != nil {
-		log.Fatalf("Error creating JWT secret: %s", err)
+		log.Fatalf("Error creating secret: %s", err)
 	}
-	log.Printf("Created JWT secret %s", secretName)
+	log.Printf("Created secret %s", secretName)
 }
 
 func createDatabaseTables() {
-	dsn := os.Getenv("DB_DSN")
-
-	db, err := sql.Open("postgres", dsn)
-	if err != nil {
-		log.Fatalf("Error connecting to database: %s", err)
+	dsn := os.Getenv("DATABASE_DSN")
+	external := os.Getenv("DATABASE_EXTERNAL")
+	namespace := os.Getenv("NAMESPACE")
+	var db *sql.DB
+	var err error
+	if external == "true" {
+		db, err = sql.Open("postgres", dsn)
+		if err != nil {
+			log.Fatalf("Error connecting to external database: %s", err)
+		}
+		err = db.Ping()
+		if err != nil {
+			log.Fatalf("Error pinging external database: %s", err)
+		}
+	} else {
+		dbPassword := generateRandomString(16)
+		dsn = fmt.Sprintf("postgres://postgres:%s@cassata-postgres.%s.svc.cluster.local:5432/cassata", dbPassword, namespace)
+		db, err = sql.Open("postgres", dsn)
+		if err != nil {
+			log.Fatalf("Error connecting to local database: %s", err)
+		}
+		err = db.Ping()
+		if err != nil {
+			log.Fatalf("Error pinging local database: %s", err)
+		}
 	}
-	defer db.Close()
-
+	createSecret(clientset, os.Getenv("DATABASE_SECRET_NAME"), namespace, map[string]string{"DATABASE_DSN": dsn})
 	_, err = db.Exec(`
 		-- Migration script to create tables and add unique constraints
 		CREATE TABLE IF NOT EXISTS users (
@@ -150,68 +155,6 @@ func createDatabaseTables() {
 	}
 
 	log.Println("Database migration script executed successfully")
-}
-
-func createKubernetesResources(clientset *kubernetes.Clientset) {
-	namespace := os.Getenv("NAMESPACE")
-	serviceAccountName := os.Getenv("SERVICE_ACCOUNT_NAME")
-	clusterRoleName := os.Getenv("CLUSTER_ROLE_NAME")
-	clusterRoleBindingName := os.Getenv("CLUSTER_ROLE_BINDING_NAME")
-
-	// Create ServiceAccount
-	sa := &v1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: serviceAccountName,
-		},
-	}
-	_, err := clientset.CoreV1().ServiceAccounts(namespace).Create(context.TODO(), sa, metav1.CreateOptions{})
-	if err != nil && !errors.IsAlreadyExists(err) {
-		log.Fatalf("Error creating ServiceAccount: %s", err)
-	}
-	log.Printf("ServiceAccount %s created or already exists", serviceAccountName)
-
-	// Create ClusterRole
-	clusterRole := &rbacv1.ClusterRole{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: clusterRoleName,
-		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{"rbac.authorization.k8s.io"},
-				Resources: []string{"clusterroles"},
-				Verbs:     []string{"update", "get", "list"},
-			},
-		},
-	}
-	_, err = clientset.RbacV1().ClusterRoles().Create(context.TODO(), clusterRole, metav1.CreateOptions{})
-	if err != nil && !errors.IsAlreadyExists(err) {
-		log.Fatalf("Error creating ClusterRole: %s", err)
-	}
-	log.Printf("ClusterRole %s created or already exists", clusterRoleName)
-
-	// Create ClusterRoleBinding
-	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: clusterRoleBindingName,
-		},
-		Subjects: []rbacv1.Subject{
-			{
-				Kind:      "ServiceAccount",
-				Name:      serviceAccountName,
-				Namespace: namespace,
-			},
-		},
-		RoleRef: rbacv1.RoleRef{
-			Kind:     "ClusterRole",
-			Name:     clusterRoleName,
-			APIGroup: "rbac.authorization.k8s.io",
-		},
-	}
-	_, err = clientset.RbacV1().ClusterRoleBindings().Create(context.TODO(), clusterRoleBinding, metav1.CreateOptions{})
-	if err != nil && !errors.IsAlreadyExists(err) {
-		log.Fatalf("Error creating ClusterRoleBinding: %s", err)
-	}
-	log.Printf("ClusterRoleBinding %s created or already exists", clusterRoleBindingName)
 }
 
 func generateRandomString(length int) string {
