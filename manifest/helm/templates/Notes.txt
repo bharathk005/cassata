@@ -2,18 +2,18 @@ Thank you for installing {{ .Chart.Name }}.
 
 Your release is named {{ .Release.Name }}.
 
-To learn more about the release, try:
+To learn more about the release, try
 
   $ helm status {{ .Release.Name }}
   $ helm get all {{ .Release.Name }}
 
-{{- if .Values.database.external.enabled }}
+{{- if .Values.database.external }}
 Using external database with provided DSN.
 {{- else }}
 A PostgreSQL database has been deployed in your cluster.
 {{- end }}
 
 You can access the Cassata API at:
-  http://{{ include "cassata.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+http://{{- include "cassata.fullname" . }}.{{ .Values.cassata.namespace }}.svc.cluster.local
 
 For more information on using Cassata, please refer to the documentation.

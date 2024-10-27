@@ -1,8 +1,9 @@
-{{- if and .Values.database.internal.enabled (not .Values.database.external.enabled) }}
+{{- if and .Values.database.external }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "cassata.fullname" . }}-postgres
+  name: {{- include "cassata.fullname" . }}-postgres
+  namespace: {{ .Values.cassata.namespace }}
   labels:
     {{- include "cassata.labels" . | nindent 4 }}
     app.kubernetes.io/component: database
