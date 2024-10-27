@@ -7,10 +7,10 @@ import (
 	"math/rand"
 	"os"
 	"time"
+	"fmt"
 
 	_ "github.com/lib/pq"
 	v1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -32,7 +32,7 @@ func main() {
 	createSecret(clientset, os.Getenv("JWT_SECRET_NAME"), os.Getenv("NAMESPACE"), map[string]string{"JWT_SECRET_KEY": generateRandomString(32)})
 
 	// 2. Create database tables if they don't exist
-	createDatabaseTables()
+	createDatabaseTables(clientset)
 
 	log.Println("Initialization completed successfully")
 }
@@ -61,7 +61,7 @@ func createSecret(clientset *kubernetes.Clientset, secretName string, namespace 
 	log.Printf("Created secret %s", secretName)
 }
 
-func createDatabaseTables() {
+func createDatabaseTables(clientset *kubernetes.Clientset) {
 	dsn := os.Getenv("DATABASE_DSN")
 	external := os.Getenv("DATABASE_EXTERNAL")
 	namespace := os.Getenv("NAMESPACE")
